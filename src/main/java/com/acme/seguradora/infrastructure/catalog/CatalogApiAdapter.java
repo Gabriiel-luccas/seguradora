@@ -12,6 +12,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Optional;
 
@@ -31,7 +32,9 @@ public class CatalogApiAdapter implements CatalogServicePort {
         try {
             log.info("Fetching product from catalog: {}", productId);
             ProductApiResponse response = catalogRestTemplate.getForObject(
-                    baseUrl + "/catalog/products/" + productId,
+                    UriComponentsBuilder.fromHttpUrl(baseUrl)
+                            .pathSegment("catalog", "products", productId)
+                            .build().toUriString(),
                     ProductApiResponse.class
             );
             if (response == null) return Optional.empty();
@@ -53,7 +56,9 @@ public class CatalogApiAdapter implements CatalogServicePort {
         try {
             log.info("Fetching offer from catalog: {}", offerId);
             OfferApiResponse response = catalogRestTemplate.getForObject(
-                    baseUrl + "/catalog/offers/" + offerId,
+                    UriComponentsBuilder.fromHttpUrl(baseUrl)
+                            .pathSegment("catalog", "offers", offerId)
+                            .build().toUriString(),
                     OfferApiResponse.class
             );
             if (response == null) return Optional.empty();
