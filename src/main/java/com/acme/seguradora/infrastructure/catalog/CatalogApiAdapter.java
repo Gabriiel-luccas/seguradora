@@ -62,6 +62,14 @@ public class CatalogApiAdapter implements CatalogServicePort {
                     OfferApiResponse.class
             );
             if (response == null) return Optional.empty();
+            CatalogOfferDto.MonthlyPremiumDto monthlyPremium = null;
+            if (response.getMonthlyPremium() != null) {
+                monthlyPremium = CatalogOfferDto.MonthlyPremiumDto.builder()
+                        .minAmount(response.getMonthlyPremium().getMinAmount())
+                        .maxAmount(response.getMonthlyPremium().getMaxAmount())
+                        .suggestedAmount(response.getMonthlyPremium().getSuggestedAmount())
+                        .build();
+            }
             return Optional.of(CatalogOfferDto.builder()
                     .id(response.getId())
                     .productId(response.getProductId())
@@ -69,11 +77,7 @@ public class CatalogApiAdapter implements CatalogServicePort {
                     .active(response.isActive())
                     .coverages(response.getCoverages())
                     .assistances(response.getAssistances())
-                    .monthlyPremium(CatalogOfferDto.MonthlyPremiumDto.builder()
-                            .minAmount(response.getMonthlyPremium().getMinAmount())
-                            .maxAmount(response.getMonthlyPremium().getMaxAmount())
-                            .suggestedAmount(response.getMonthlyPremium().getSuggestedAmount())
-                            .build())
+                    .monthlyPremium(monthlyPremium)
                     .build());
         } catch (HttpClientErrorException.NotFound e) {
             log.warn("Offer not found in catalog: {}", offerId);
