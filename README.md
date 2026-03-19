@@ -1,0 +1,2 @@
+# seguradora
+Case Itaú Seguradora
