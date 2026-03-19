@@ -1,0 +1,55 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "/catalog/offers/aaa1b2c3-d4e5-6789-abcd-ef0123456789"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "id": "aaa1b2c3-d4e5-6789-abcd-ef0123456789",
+          "product_id": "1ab2c3d4-e5f6-7890-abcd-ef1234567890",
+          "name": "Oferta Básica de Vida",
+          "active": true,
+          "coverages": {
+            "Morte Acidental": 100000.00,
+            "Invalidez Permanente": 100000.00,
+            "Morte por Causas Naturais": 500000.00,
+            "Assistência Funeral": 10000.00
+          },
+          "assistances": [
+            "Assistência Funeral",
+            "Mensalidade Protegida",
+            "Telemedicina",
+            "Descontos em Farmácias",
+            "Check-Up Médico"
+          ],
+          "monthly_premium": {
+            "max_amount": 1000.00,
+            "min_amount": 50.00,
+            "suggested_amount": 100.00
+          }
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "urlPattern": "/catalog/offers/.*"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "error": "Offer not found"
+        }
+      }
+    }
+  ]
+}
