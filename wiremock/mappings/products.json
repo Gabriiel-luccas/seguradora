@@ -1,0 +1,41 @@
+{
+  "mappings": [
+    {
+      "id": "product-1",
+      "request": {
+        "method": "GET",
+        "urlPattern": "/catalog/products/1ab2c3d4-e5f6-7890-abcd-ef1234567890"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "id": "1ab2c3d4-e5f6-7890-abcd-ef1234567890",
+          "name": "Seguro de Vida",
+          "active": true,
+          "offers_ids": [
+            "aaa1b2c3-d4e5-6789-abcd-ef0123456789"
+          ]
+        }
+      }
+    },
+    {
+      "id": "product-not-found",
+      "request": {
+        "method": "GET",
+        "urlPattern": "/catalog/products/.*"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "error": "Product not found"
+        }
+      }
+    }
+  ]
+}

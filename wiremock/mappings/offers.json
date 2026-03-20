@@ -1,0 +1,48 @@
+{
+  "mappings": [
+    {
+      "id": "offer-1",
+      "request": {
+        "method": "GET",
+        "urlPattern": "/catalog/offers/aaa1b2c3-d4e5-6789-abcd-ef0123456789"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "id": "aaa1b2c3-d4e5-6789-abcd-ef0123456789",
+          "product_id": "1ab2c3d4-e5f6-7890-abcd-ef1234567890",
+          "name": "Oferta Padrão",
+          "active": true,
+          "coverages": {
+            "Morte Acidental": 500000.00,
+            "Invalidez Permanente": 300000.00,
+            "Assistência Funeral": 25000.00
+          },
+          "assistances": ["Funeral", "Ambulância", "Chaveiro 24h"],
+          "min_monthly_premium_amount": 50.00,
+          "max_monthly_premium_amount": 200.00,
+          "max_coverage_amount": 1000000.00
+        }
+      }
+    },
+    {
+      "id": "offer-not-found",
+      "request": {
+        "method": "GET",
+        "urlPattern": "/catalog/offers/.*"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "error": "Offer not found"
+        }
+      }
+    }
+  ]
+}
