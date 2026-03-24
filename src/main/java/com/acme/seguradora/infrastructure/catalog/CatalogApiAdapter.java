@@ -5,8 +5,8 @@ import com.acme.seguradora.application.dto.CatalogProductDto;
 import com.acme.seguradora.application.port.output.CatalogServicePort;
 import com.acme.seguradora.infrastructure.catalog.dto.OfferApiResponse;
 import com.acme.seguradora.infrastructure.catalog.dto.ProductApiResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
@@ -14,12 +14,15 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Optional;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class CatalogApiAdapter implements CatalogServicePort {
 
+    private static final Logger log = LoggerFactory.getLogger(CatalogApiAdapter.class);
     private final RestTemplate catalogRestTemplate;
+
+    public CatalogApiAdapter(RestTemplate catalogRestTemplate) {
+        this.catalogRestTemplate = catalogRestTemplate;
+    }
 
     @Override
     @Cacheable(value = "products", key = "#productId")
@@ -31,12 +34,12 @@ public class CatalogApiAdapter implements CatalogServicePort {
             if (response == null) {
                 return Optional.empty();
             }
-            return Optional.of(CatalogProductDto.builder()
-                    .id(response.getId())
-                    .name(response.getName())
-                    .active(response.isActive())
-                    .offersIds(response.getOffersIds())
-                    .build());
+            return Optional.of(new CatalogProductDto(
+                    response.id(),
+                    response.name(),
+                    response.active(),
+                    response.offersIds(),
+                    response.createdAt()));
         } catch (HttpClientErrorException.NotFound e) {
             log.warn("Product not found in catalog: {}", productId);
             return Optional.empty();
@@ -53,17 +56,17 @@ public class CatalogApiAdapter implements CatalogServicePort {
             if (response == null) {
                 return Optional.empty();
             }
-            return Optional.of(CatalogOfferDto.builder()
-                    .id(response.getId())
-                    .productId(response.getProductId())
-                    .name(response.getName())
-                    .active(response.isActive())
-                    .coverages(response.getCoverages())
-                    .assistances(response.getAssistances())
-                    .minMonthlyPremiumAmount(response.getMinMonthlyPremiumAmount())
-                    .maxMonthlyPremiumAmount(response.getMaxMonthlyPremiumAmount())
-                    .maxCoverageAmount(response.getMaxCoverageAmount())
-                    .build());
+
+            return Optional.of(new CatalogOfferDto(
+                    response.id(),
+                    response.productId(),
+                    response.name(),
+                    response.active(),
+                    response.coverages(),
+                    response.assistances(),
+                    response.monthlyPremiumAmount().minAmount(),
+                    response.monthlyPremiumAmount().maxAmount(),
+                    response.monthlyPremiumAmount().suggestedAmount()));
         } catch (HttpClientErrorException.NotFound e) {
             log.warn("Offer not found in catalog: {}", offerId);
             return Optional.empty();

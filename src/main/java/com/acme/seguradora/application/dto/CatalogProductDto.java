@@ -1,20 +1,14 @@
 package com.acme.seguradora.application.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
-@Builder(toBuilder = true)
-@NoArgsConstructor
-@AllArgsConstructor
-public class CatalogProductDto {
-
-    private String id;
-    private String name;
-    private boolean active;
-    private List<String> offersIds;
-}
+public record CatalogProductDto(
+        String id,
+        String name,
+        boolean active,
+        List<String> offersIds,
+        @JsonProperty("created_at")
+        LocalDateTime createdAt) {}

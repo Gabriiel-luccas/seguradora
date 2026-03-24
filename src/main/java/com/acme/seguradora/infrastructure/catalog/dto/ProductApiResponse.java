@@ -1,23 +1,17 @@
 package com.acme.seguradora.infrastructure.catalog.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ProductApiResponse {
+public record ProductApiResponse(
+        String id,
+        String name,
+        boolean active,
 
-    private String id;
-    private String name;
-    private boolean active;
+        @JsonProperty("offers_ids")
+        List<String> offersIds,
 
-    @JsonProperty("offers_ids")
-    private List<String> offersIds;
-}
+        @JsonProperty("created_at")
+        LocalDateTime createdAt) {}

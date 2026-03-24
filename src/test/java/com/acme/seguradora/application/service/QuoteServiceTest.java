@@ -51,60 +51,49 @@ class QuoteServiceTest {
 
     @BeforeEach
     void setUp() {
-        activeProduct = CatalogProductDto.builder()
-                .id("prod-1")
-                .name("Life Insurance")
-                .active(true)
-                .offersIds(List.of("offer-1"))
-                .build();
+        activeProduct = new CatalogProductDto("prod-1", "Life Insurance", true, List.of("offer-1"), null);
 
-        activeOffer = CatalogOfferDto.builder()
-                .id("offer-1")
-                .productId("prod-1")
-                .name("Standard Offer")
-                .active(true)
-                .coverages(Map.of(
+        activeOffer = new CatalogOfferDto(
+                "offer-1",
+                "prod-1",
+                "Standard Offer",
+                true,
+                Map.of(
                         "Morte Acidental", new BigDecimal("500000.00"),
                         "Invalidez Permanente", new BigDecimal("300000.00"),
-                        "Assistência Funeral", new BigDecimal("25000.00")))
-                .assistances(List.of("Funeral", "Ambulância"))
-                .minMonthlyPremiumAmount(new BigDecimal("50.00"))
-                .maxMonthlyPremiumAmount(new BigDecimal("200.00"))
-                .maxCoverageAmount(new BigDecimal("1000000.00"))
-                .build();
+                        "Assistência Funeral", new BigDecimal("25000.00")),
+                List.of("Funeral", "Ambulância"),
+                new BigDecimal("50.00"),
+                new BigDecimal("200.00"),
+                new BigDecimal("1000000.00"));
 
-        validQuote = Quote.builder()
-                .productId("prod-1")
-                .offerId("offer-1")
-                .category("LIFE")
-                .totalMonthlyPremiumAmount(new BigDecimal("75.25"))
-                .totalCoverageAmount(new BigDecimal("825000.00"))
-                .coverages(List.of(
-                        Coverage.builder().name("Morte Acidental").value(new BigDecimal("500000.00")).build(),
-                        Coverage.builder().name("Invalidez Permanente").value(new BigDecimal("300000.00")).build(),
-                        Coverage.builder().name("Assistência Funeral").value(new BigDecimal("25000.00")).build()))
-                .assistances(List.of("Funeral", "Ambulância"))
-                .customer(Customer.builder()
-                        .documentNumber("36205578900")
-                        .name("John Doe")
-                        .type("NATURAL")
-                        .gender("MALE")
-                        .dateOfBirth("1990-05-20")
-                        .email("john@example.com")
-                        .phoneNumber("11999999999")
-                        .build())
-                .build();
+        validQuote = new Quote(
+                null, "prod-1", "offer-1", "LIFE",
+                new BigDecimal("75.25"), new BigDecimal("825000.00"),
+                List.of(
+                        new Coverage("Morte Acidental", new BigDecimal("500000.00")),
+                        new Coverage("Invalidez Permanente", new BigDecimal("300000.00")),
+                        new Coverage("Assistência Funeral", new BigDecimal("25000.00"))),
+                List.of("Funeral", "Ambulância"),
+                new Customer(
+                        "36205578900",
+                        "John Doe",
+                        "NATURAL",
+                        "MALE",
+                        "1990-05-20",
+                        "john@example.com",
+                        "11999999999"),
+                null, null, null, null);
     }
 
     @Test
     @DisplayName("createQuote - valid request - should save quote with PENDING status")
     void createQuote_validRequest_shouldReturnSavedQuote() {
-        Quote savedQuote = validQuote.toBuilder()
-                .id(1L)
-                .status(QuoteStatus.PENDING)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
+        Quote savedQuote = new Quote(
+                1L, validQuote.productId(), validQuote.offerId(), validQuote.category(),
+                validQuote.totalMonthlyPremiumAmount(), validQuote.totalCoverageAmount(),
+                validQuote.coverages(), validQuote.assistances(), validQuote.customer(),
+                validQuote.policyId(), QuoteStatus.PENDING, LocalDateTime.now(), LocalDateTime.now());
 
         when(catalogServicePort.findProductById("prod-1")).thenReturn(Optional.of(activeProduct));
         when(catalogServicePort.findOfferById("offer-1")).thenReturn(Optional.of(activeOffer));
@@ -114,8 +103,8 @@ class QuoteServiceTest {
         Quote result = quoteService.createQuote(validQuote);
 
         assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(1L);
-        assertThat(result.getStatus()).isEqualTo(QuoteStatus.PENDING);
+        assertThat(result.id()).isEqualTo(1L);
+        assertThat(result.status()).isEqualTo(QuoteStatus.PENDING);
 
         verify(quoteRepositoryPort).save(any(Quote.class));
         verify(outboxService).saveQuoteReceivedEvent(any(Quote.class));
@@ -136,7 +125,7 @@ class QuoteServiceTest {
     @Test
     @DisplayName("createQuote - inactive product - should throw QuoteValidationException")
     void createQuote_inactiveProduct_shouldThrowValidationException() {
-        CatalogProductDto inactiveProduct = activeProduct.toBuilder().active(false).build();
+        CatalogProductDto inactiveProduct = new CatalogProductDto(activeProduct.id(), activeProduct.name(), false, activeProduct.offersIds(), activeProduct.createdAt());
         when(catalogServicePort.findProductById("prod-1")).thenReturn(Optional.of(inactiveProduct));
 
         assertThatThrownBy(() -> quoteService.createQuote(validQuote))
@@ -158,13 +147,15 @@ class QuoteServiceTest {
     @Test
     @DisplayName("createQuote - coverage exceeds maximum - should throw QuoteValidationException")
     void createQuote_coverageExceedsMaximum_shouldThrowValidationException() {
-        Quote quoteCoverageExceeds = validQuote.toBuilder()
-                .coverages(List.of(
-                        Coverage.builder().name("Morte Acidental").value(new BigDecimal("600000.00")).build(),
-                        Coverage.builder().name("Invalidez Permanente").value(new BigDecimal("300000.00")).build(),
-                        Coverage.builder().name("Assistência Funeral").value(new BigDecimal("25000.00")).build()))
-                .totalCoverageAmount(new BigDecimal("925000.00"))
-                .build();
+        Quote quoteCoverageExceeds = new Quote(
+                validQuote.id(), validQuote.productId(), validQuote.offerId(), validQuote.category(),
+                validQuote.totalMonthlyPremiumAmount(), new BigDecimal("925000.00"),
+                List.of(
+                        new Coverage("Morte Acidental", new BigDecimal("600000.00")),
+                        new Coverage("Invalidez Permanente", new BigDecimal("300000.00")),
+                        new Coverage("Assistência Funeral", new BigDecimal("25000.00"))),
+                validQuote.assistances(), validQuote.customer(),
+                validQuote.policyId(), validQuote.status(), validQuote.createdAt(), validQuote.updatedAt());
 
         when(catalogServicePort.findProductById("prod-1")).thenReturn(Optional.of(activeProduct));
         when(catalogServicePort.findOfferById("offer-1")).thenReturn(Optional.of(activeOffer));
@@ -177,9 +168,11 @@ class QuoteServiceTest {
     @Test
     @DisplayName("createQuote - invalid assistance - should throw QuoteValidationException")
     void createQuote_invalidAssistance_shouldThrowValidationException() {
-        Quote quoteInvalidAssistance = validQuote.toBuilder()
-                .assistances(List.of("NonExistentAssistance"))
-                .build();
+        Quote quoteInvalidAssistance = new Quote(
+                validQuote.id(), validQuote.productId(), validQuote.offerId(), validQuote.category(),
+                validQuote.totalMonthlyPremiumAmount(), validQuote.totalCoverageAmount(),
+                validQuote.coverages(), List.of("NonExistentAssistance"), validQuote.customer(),
+                validQuote.policyId(), validQuote.status(), validQuote.createdAt(), validQuote.updatedAt());
 
         when(catalogServicePort.findProductById("prod-1")).thenReturn(Optional.of(activeProduct));
         when(catalogServicePort.findOfferById("offer-1")).thenReturn(Optional.of(activeOffer));
@@ -192,9 +185,11 @@ class QuoteServiceTest {
     @Test
     @DisplayName("createQuote - premium below minimum - should throw QuoteValidationException")
     void createQuote_premiumBelowMinimum_shouldThrowValidationException() {
-        Quote quoteLowPremium = validQuote.toBuilder()
-                .totalMonthlyPremiumAmount(new BigDecimal("10.00"))
-                .build();
+        Quote quoteLowPremium = new Quote(
+                validQuote.id(), validQuote.productId(), validQuote.offerId(), validQuote.category(),
+                new BigDecimal("10.00"), validQuote.totalCoverageAmount(),
+                validQuote.coverages(), validQuote.assistances(), validQuote.customer(),
+                validQuote.policyId(), validQuote.status(), validQuote.createdAt(), validQuote.updatedAt());
 
         when(catalogServicePort.findProductById("prod-1")).thenReturn(Optional.of(activeProduct));
         when(catalogServicePort.findOfferById("offer-1")).thenReturn(Optional.of(activeOffer));
@@ -207,9 +202,11 @@ class QuoteServiceTest {
     @Test
     @DisplayName("createQuote - total coverage mismatch - should throw QuoteValidationException")
     void createQuote_totalCoverageMismatch_shouldThrowValidationException() {
-        Quote quoteMismatch = validQuote.toBuilder()
-                .totalCoverageAmount(new BigDecimal("900000.00"))
-                .build();
+        Quote quoteMismatch = new Quote(
+                validQuote.id(), validQuote.productId(), validQuote.offerId(), validQuote.category(),
+                validQuote.totalMonthlyPremiumAmount(), new BigDecimal("900000.00"),
+                validQuote.coverages(), validQuote.assistances(), validQuote.customer(),
+                validQuote.policyId(), validQuote.status(), validQuote.createdAt(), validQuote.updatedAt());
 
         when(catalogServicePort.findProductById("prod-1")).thenReturn(Optional.of(activeProduct));
         when(catalogServicePort.findOfferById("offer-1")).thenReturn(Optional.of(activeOffer));
@@ -222,18 +219,18 @@ class QuoteServiceTest {
     @Test
     @DisplayName("getQuote - existing id - should return quote")
     void getQuote_existingId_shouldReturnQuote() {
-        Quote savedQuote = validQuote.toBuilder()
-                .id(1L)
-                .status(QuoteStatus.PENDING)
-                .createdAt(LocalDateTime.now())
-                .build();
+        Quote savedQuote = new Quote(
+                1L, validQuote.productId(), validQuote.offerId(), validQuote.category(),
+                validQuote.totalMonthlyPremiumAmount(), validQuote.totalCoverageAmount(),
+                validQuote.coverages(), validQuote.assistances(), validQuote.customer(),
+                validQuote.policyId(), QuoteStatus.PENDING, LocalDateTime.now(), validQuote.updatedAt());
 
         when(quoteRepositoryPort.findById(1L)).thenReturn(Optional.of(savedQuote));
 
         Quote result = quoteService.getQuote(1L);
 
         assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.id()).isEqualTo(1L);
     }
 
     @Test
@@ -249,24 +246,26 @@ class QuoteServiceTest {
     @Test
     @DisplayName("updateQuoteWithPolicy - should update status to ACTIVE")
     void updateQuoteWithPolicy_shouldUpdateStatusToActive() {
-        Quote pendingQuote = validQuote.toBuilder()
-                .id(1L)
-                .status(QuoteStatus.PENDING)
-                .createdAt(LocalDateTime.now())
-                .build();
-        Quote activeQuote = pendingQuote.toBuilder()
-                .policyId(100L)
-                .status(QuoteStatus.ACTIVE)
-                .build();
+        LocalDateTime now = LocalDateTime.now();
+        Quote pendingQuote = new Quote(
+                1L, validQuote.productId(), validQuote.offerId(), validQuote.category(),
+                validQuote.totalMonthlyPremiumAmount(), validQuote.totalCoverageAmount(),
+                validQuote.coverages(), validQuote.assistances(), validQuote.customer(),
+                validQuote.policyId(), QuoteStatus.PENDING, now, validQuote.updatedAt());
+        Quote activeQuote = new Quote(
+                pendingQuote.id(), pendingQuote.productId(), pendingQuote.offerId(), pendingQuote.category(),
+                pendingQuote.totalMonthlyPremiumAmount(), pendingQuote.totalCoverageAmount(),
+                pendingQuote.coverages(), pendingQuote.assistances(), pendingQuote.customer(),
+                100L, QuoteStatus.ACTIVE, pendingQuote.createdAt(), now);
 
         when(quoteRepositoryPort.findById(1L)).thenReturn(Optional.of(pendingQuote));
         when(quoteRepositoryPort.save(any(Quote.class))).thenReturn(activeQuote);
-        doNothing().when(outboxService).markPolicyIssuedReceived(anyLong(), anyLong());
+        doNothing().when(outboxService).markPolicyIssuedReceived(anyLong());
 
-        quoteService.updateQuoteWithPolicy(1L, 100L);
+        quoteService.updateQuoteWithPolicy(1L, 100L, now);
 
         verify(quoteRepositoryPort).save(argThat(q ->
-                q.getStatus() == QuoteStatus.ACTIVE && q.getPolicyId().equals(100L)));
-        verify(outboxService).markPolicyIssuedReceived(1L, 100L);
+                q.status() == QuoteStatus.ACTIVE && q.policyId().equals(100L)));
+        verify(outboxService).markPolicyIssuedReceived(1L);
     }
 }

@@ -6,48 +6,39 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class CreateQuoteRequest {
+public record CreateQuoteRequest(
 
-    @NotBlank
-    @JsonProperty("product_id")
-    private String productId;
+        @NotBlank
+        @JsonProperty("product_id")
+        String productId,
 
-    @NotBlank
-    @JsonProperty("offer_id")
-    private String offerId;
+        @NotBlank
+        @JsonProperty("offer_id")
+        String offerId,
 
-    @NotBlank
-    private String category;
+        @NotBlank
+        String category,
 
-    @NotNull
-    @Positive
-    @JsonProperty("total_monthly_premium_amount")
-    private BigDecimal totalMonthlyPremiumAmount;
+        @NotNull
+        @Positive
+        @JsonProperty("total_monthly_premium_amount")
+        BigDecimal totalMonthlyPremiumAmount,
 
-    @NotNull
-    @Positive
-    @JsonProperty("total_coverage_amount")
-    private BigDecimal totalCoverageAmount;
+        @NotNull
+        @Positive
+        @JsonProperty("total_coverage_amount")
+        BigDecimal totalCoverageAmount,
 
-    @NotEmpty
-    @Valid
-    private List<CoverageRequest> coverages;
+        @NotEmpty
+        @Valid
+        List<CoverageRequest> coverages,
 
-    private List<String> assistances;
+        List<String> assistances,
 
-    @NotNull
-    @Valid
-    private CustomerRequest customer;
-}
+        @NotNull
+        @Valid
+        CustomerRequest customer) {}

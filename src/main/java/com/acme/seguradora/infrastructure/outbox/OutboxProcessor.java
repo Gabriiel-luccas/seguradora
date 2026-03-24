@@ -1,7 +1,7 @@
 package com.acme.seguradora.infrastructure.outbox;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -14,19 +14,27 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class OutboxProcessor {
+
+    private static final Logger log = LoggerFactory.getLogger(OutboxProcessor.class);
 
     private final OutboxEventRepository outboxEventRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
+    public OutboxProcessor(OutboxEventRepository outboxEventRepository,
+                           KafkaTemplate<String, Object> kafkaTemplate,
+                           ObjectMapper objectMapper) {
+        this.outboxEventRepository = outboxEventRepository;
+        this.kafkaTemplate = kafkaTemplate;
+        this.objectMapper = objectMapper;
+    }
+
     @Scheduled(fixedDelayString = "${outbox.processor.interval-ms:5000}")
     @Transactional
     public void processOutboxEvents() {
-        List<OutboxEvent> pendingEvents = outboxEventRepository
+        List<OutboxEventEntity> pendingEvents = outboxEventRepository
                 .findByFlagSentFalseAndStatusOrderByDatCreatedAsc("PENDING");
 
         if (pendingEvents.isEmpty()) {
@@ -35,10 +43,11 @@ public class OutboxProcessor {
 
         log.debug("Processing {} pending outbox events", pendingEvents.size());
 
-        for (OutboxEvent event : pendingEvents) {
+        for (OutboxEventEntity event : pendingEvents) {
             try {
                 Map<String, Object> payload = objectMapper.readValue(
-                        event.getPayload(), new TypeReference<Map<String, Object>>() {});
+                        event.getPayload(), new TypeReference<>() {
+                        });
 
                 String key = event.getQuoteId() != null ? String.valueOf(event.getQuoteId()) : null;
                 kafkaTemplate.send(event.getTopic(), key, payload).get();

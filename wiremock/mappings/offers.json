@@ -1,7 +1,7 @@
 {
   "mappings": [
     {
-      "id": "offer-1",
+      "id": "f1a2b3c4-d5e6-7890-abcd-ef0123456789",
       "request": {
         "method": "GET",
         "urlPattern": "/catalog/offers/aaa1b2c3-d4e5-6789-abcd-ef0123456789"
@@ -29,19 +29,15 @@
       }
     },
     {
-      "id": "offer-not-found",
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef9876543210",
       "request": {
         "method": "GET",
         "urlPattern": "/catalog/offers/.*"
       },
       "response": {
         "status": 404,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "jsonBody": {
-          "error": "Offer not found"
-        }
+        "headers": { "Content-Type": "application/json" },
+        "jsonBody": { "error": "Offer not found" }
       }
     }
   ]

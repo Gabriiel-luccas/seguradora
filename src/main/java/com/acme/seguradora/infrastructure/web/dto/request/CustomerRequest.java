@@ -1,29 +1,24 @@
 package com.acme.seguradora.infrastructure.web.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.Email;
+import org.hibernate.validator.constraints.br.CPF;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class CustomerRequest {
+public record CustomerRequest(
 
-    @JsonProperty("document_number")
-    private String documentNumber;
+        @JsonProperty("document_number")
+        @CPF
+        String documentNumber,
 
-    private String name;
-    private String type;
-    private String gender;
+        String name,
+        String type,
+        String gender,
 
-    @JsonProperty("date_of_birth")
-    private String dateOfBirth;
+        @JsonProperty("date_of_birth")
+        String dateOfBirth,
 
-    private String email;
+        @Email
+        String email,
 
-    @JsonProperty("phone_number")
-    private String phoneNumber;
-}
+        @JsonProperty("phone_number")
+        String phoneNumber) {}

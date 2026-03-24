@@ -5,15 +5,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
 
-@Slf4j
 @Converter
 public class CoverageListConverter extends JsonConverter<List<Coverage>>
         implements AttributeConverter<List<Coverage>, String> {
+
+    private static final Logger log = LoggerFactory.getLogger(CoverageListConverter.class);
 
     @Override
     public String convertToDatabaseColumn(List<Coverage> coverages) {

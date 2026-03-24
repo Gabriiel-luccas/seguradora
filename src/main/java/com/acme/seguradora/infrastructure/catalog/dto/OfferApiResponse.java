@@ -1,37 +1,25 @@
 package com.acme.seguradora.infrastructure.catalog.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class OfferApiResponse {
+public record OfferApiResponse(
+        String id,
 
-    private String id;
+        @JsonProperty("product_id")
+        String productId,
 
-    @JsonProperty("product_id")
-    private String productId;
-
-    private String name;
-    private boolean active;
-    private Map<String, BigDecimal> coverages;
-    private List<String> assistances;
-
-    @JsonProperty("min_monthly_premium_amount")
-    private BigDecimal minMonthlyPremiumAmount;
-
-    @JsonProperty("max_monthly_premium_amount")
-    private BigDecimal maxMonthlyPremiumAmount;
-
-    @JsonProperty("max_coverage_amount")
-    private BigDecimal maxCoverageAmount;
+        String name,
+        @JsonProperty("created_at")
+        LocalDateTime createdAt,
+        boolean active,
+        Map<String, BigDecimal> coverages,
+        List<String> assistances,
+        @JsonProperty("monthly_premium_amount")
+        MonthlyPremiumAmountResponse monthlyPremiumAmount
+) {
 }
