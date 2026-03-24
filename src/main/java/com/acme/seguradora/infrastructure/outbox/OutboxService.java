@@ -83,4 +83,35 @@ public class OutboxService {
 
         log.debug("Marked QUOTE_RECEIVED event as RECEIVED for quoteId={}", quoteId);
     }
+
+    @Transactional(readOnly = true)
+    public java.util.List<OutboxEventEntity> loadPendingEvents() {
+        return outboxEventRepository.findByFlagSentFalseAndStatusOrderByDatCreatedAsc("PENDING");
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void markEventSent(Long eventId) {
+        outboxEventRepository.findById(eventId).ifPresent(event -> {
+            event.setFlagSent(true);
+            event.setDatSent(LocalDateTime.now());
+            event.setStatus("SENT");
+            event.setDatUpdated(LocalDateTime.now());
+            outboxEventRepository.save(event);
+        });
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void incrementRetry(Long eventId, String errorMessage) {
+        outboxEventRepository.findById(eventId).ifPresent(event -> {
+            event.setRetryCount(event.getRetryCount() + 1);
+            event.setErrorMessage(errorMessage);
+            event.setDatUpdated(LocalDateTime.now());
+            if (event.getRetryCount() >= 3) {
+                event.setStatus("FAILED");
+                log.error("Outbox event id={} marked as FAILED after {} retries",
+                        event.getId(), event.getRetryCount());
+            }
+            outboxEventRepository.save(event);
+        });
+    }
 }

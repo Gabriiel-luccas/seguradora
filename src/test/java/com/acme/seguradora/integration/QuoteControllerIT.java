@@ -103,9 +103,11 @@ class QuoteControllerIT {
                                     "Assistência Funeral": 25000.00
                                   },
                                   "assistances": ["Funeral", "Ambulância", "Chaveiro 24h"],
-                                  "min_monthly_premium_amount": 50.00,
-                                  "max_monthly_premium_amount": 200.00,
-                                  "max_coverage_amount": 1000000.00
+                                  "monthly_premium_amount": {
+                                    "min_amount": 50.00,
+                                    "max_amount": 200.00,
+                                    "suggested_amount": 100.00
+                                  }
                                 }
                                 """)));
     }

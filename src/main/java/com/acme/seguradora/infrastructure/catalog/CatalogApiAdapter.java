@@ -9,8 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.Optional;
 
@@ -18,19 +18,23 @@ import java.util.Optional;
 public class CatalogApiAdapter implements CatalogServicePort {
 
     private static final Logger log = LoggerFactory.getLogger(CatalogApiAdapter.class);
-    private final RestTemplate catalogRestTemplate;
+    private final WebClient catalogWebClient;
 
-    public CatalogApiAdapter(RestTemplate catalogRestTemplate) {
-        this.catalogRestTemplate = catalogRestTemplate;
+    public CatalogApiAdapter(WebClient catalogWebClient) {
+        this.catalogWebClient = catalogWebClient;
     }
 
     @Override
-    @Cacheable(value = "products", key = "#productId")
+    @Cacheable(value = "products", key = "#productId", unless = "#result == null")
     public Optional<CatalogProductDto> findProductById(String productId) {
         try {
             log.debug("Fetching product from catalog: {}", productId);
-            ProductApiResponse response = catalogRestTemplate.getForObject(
-                    "/catalog/products/{id}", ProductApiResponse.class, productId);
+            ProductApiResponse response = catalogWebClient.get()
+                    .uri("/catalog/products/{id}", productId)
+                    .retrieve()
+                    .bodyToMono(ProductApiResponse.class)
+                    .block();
+
             if (response == null) {
                 return Optional.empty();
             }
@@ -40,23 +44,26 @@ public class CatalogApiAdapter implements CatalogServicePort {
                     response.active(),
                     response.offersIds(),
                     response.createdAt()));
-        } catch (HttpClientErrorException.NotFound e) {
+        } catch (WebClientResponseException.NotFound e) {
             log.warn("Product not found in catalog: {}", productId);
             return Optional.empty();
         }
     }
 
     @Override
-    @Cacheable(value = "offers", key = "#offerId")
+    @Cacheable(value = "offers", key = "#offerId", unless = "#result == null")
     public Optional<CatalogOfferDto> findOfferById(String offerId) {
         try {
             log.debug("Fetching offer from catalog: {}", offerId);
-            OfferApiResponse response = catalogRestTemplate.getForObject(
-                    "/catalog/offers/{id}", OfferApiResponse.class, offerId);
+            OfferApiResponse response = catalogWebClient.get()
+                    .uri("/catalog/offers/{id}", offerId)
+                    .retrieve()
+                    .bodyToMono(OfferApiResponse.class)
+                    .block();
+
             if (response == null) {
                 return Optional.empty();
             }
-
             return Optional.of(new CatalogOfferDto(
                     response.id(),
                     response.productId(),
@@ -67,7 +74,7 @@ public class CatalogApiAdapter implements CatalogServicePort {
                     response.monthlyPremiumAmount().minAmount(),
                     response.monthlyPremiumAmount().maxAmount(),
                     response.monthlyPremiumAmount().suggestedAmount()));
-        } catch (HttpClientErrorException.NotFound e) {
+        } catch (WebClientResponseException.NotFound e) {
             log.warn("Offer not found in catalog: {}", offerId);
             return Optional.empty();
         }

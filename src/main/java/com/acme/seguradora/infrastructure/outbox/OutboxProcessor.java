@@ -5,37 +5,40 @@ import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Component
 public class OutboxProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxProcessor.class);
+    private static final long KAFKA_SEND_TIMEOUT_SECONDS = 5;
 
     private final OutboxEventRepository outboxEventRepository;
+    private final OutboxService outboxService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
     public OutboxProcessor(OutboxEventRepository outboxEventRepository,
+                           OutboxService outboxService,
                            KafkaTemplate<String, Object> kafkaTemplate,
                            ObjectMapper objectMapper) {
         this.outboxEventRepository = outboxEventRepository;
+        this.outboxService = outboxService;
         this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = objectMapper;
     }
 
     @Scheduled(fixedDelayString = "${outbox.processor.interval-ms:5000}")
-    @Transactional
     public void processOutboxEvents() {
-        List<OutboxEventEntity> pendingEvents = outboxEventRepository
-                .findByFlagSentFalseAndStatusOrderByDatCreatedAsc("PENDING");
+        // Load events in a short-lived read-only transaction — DB connection released immediately
+        List<OutboxEventEntity> pendingEvents = outboxService.loadPendingEvents();
 
         if (pendingEvents.isEmpty()) {
             return;
@@ -46,33 +49,28 @@ public class OutboxProcessor {
         for (OutboxEventEntity event : pendingEvents) {
             try {
                 Map<String, Object> payload = objectMapper.readValue(
-                        event.getPayload(), new TypeReference<>() {
-                        });
+                        event.getPayload(), new TypeReference<>() {});
 
                 String key = event.getQuoteId() != null ? String.valueOf(event.getQuoteId()) : null;
-                kafkaTemplate.send(event.getTopic(), key, payload).get();
 
-                event.setFlagSent(true);
-                event.setDatSent(LocalDateTime.now());
-                event.setStatus("SENT");
-                event.setDatUpdated(LocalDateTime.now());
-                outboxEventRepository.save(event);
+                // Kafka I/O is outside any DB transaction — no connection held during network I/O
+                kafkaTemplate.send(event.getTopic(), key, payload)
+                        .get(KAFKA_SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+                // Each update runs in its own short transaction via OutboxService proxy
+                outboxService.markEventSent(event.getId());
 
                 log.info("Published outbox event id={}, topic={}, quoteId={}",
                         event.getId(), event.getTopic(), event.getQuoteId());
 
+            } catch (TimeoutException e) {
+                log.error("Timeout sending outbox event id={} to Kafka after {}s — will retry",
+                        event.getId(), KAFKA_SEND_TIMEOUT_SECONDS);
+                outboxService.incrementRetry(event.getId(),
+                        "Kafka send timed out after " + KAFKA_SEND_TIMEOUT_SECONDS + "s");
             } catch (Exception e) {
                 log.error("Failed to publish outbox event id={}: {}", event.getId(), e.getMessage());
-                event.setRetryCount(event.getRetryCount() + 1);
-                event.setErrorMessage(e.getMessage());
-                event.setDatUpdated(LocalDateTime.now());
-
-                if (event.getRetryCount() >= 3) {
-                    event.setStatus("FAILED");
-                    log.error("Outbox event id={} marked as FAILED after {} retries",
-                            event.getId(), event.getRetryCount());
-                }
-                outboxEventRepository.save(event);
+                outboxService.incrementRetry(event.getId(), e.getMessage());
             }
         }
     }

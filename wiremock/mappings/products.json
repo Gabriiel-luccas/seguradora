@@ -2,6 +2,7 @@
   "mappings": [
     {
       "id": "b1c2d3e4-f5a6-7890-abcd-ef0123456789",
+      "priority": 1,
       "request": {
         "method": "GET",
         "urlPattern": "/catalog/products/1ab2c3d4-e5f6-7890-abcd-ef1234567890"
@@ -19,6 +20,7 @@
     },
     {
       "id": "c1d2e3f4-a5b6-7890-abcd-ef9876543210",
+      "priority": 10,
       "request": {
         "method": "GET",
         "urlPattern": "/catalog/products/.*"

@@ -2,6 +2,7 @@
   "mappings": [
     {
       "id": "f1a2b3c4-d5e6-7890-abcd-ef0123456789",
+      "priority": 1,
       "request": {
         "method": "GET",
         "urlPattern": "/catalog/offers/aaa1b2c3-d4e5-6789-abcd-ef0123456789"
@@ -22,14 +23,17 @@
             "Assistência Funeral": 25000.00
           },
           "assistances": ["Funeral", "Ambulância", "Chaveiro 24h"],
-          "min_monthly_premium_amount": 50.00,
-          "max_monthly_premium_amount": 200.00,
-          "max_coverage_amount": 1000000.00
+          "monthly_premium_amount": {
+            "min_amount": 50.00,
+            "max_amount": 200.00,
+            "suggested_amount": 100.00
+          }
         }
       }
     },
     {
       "id": "a1b2c3d4-e5f6-7890-abcd-ef9876543210",
+      "priority": 10,
       "request": {
         "method": "GET",
         "urlPattern": "/catalog/offers/.*"
