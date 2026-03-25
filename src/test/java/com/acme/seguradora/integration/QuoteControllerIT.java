@@ -3,6 +3,7 @@ package com.acme.seguradora.integration;
 import com.acme.seguradora.infrastructure.outbox.OutboxEventRepository;
 import com.acme.seguradora.infrastructure.persistence.repository.QuoteJpaRepository;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -13,15 +14,15 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.containsString;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @EmbeddedKafka(
@@ -37,7 +38,22 @@ import static org.hamcrest.Matchers.containsString;
 @DisplayName("Quote Controller Integration Tests")
 class QuoteControllerIT {
 
-    private static WireMockServer wireMockServer;
+    // WireMock iniciado com porta dinâmica ANTES do contexto Spring ser criado,
+    // necessário para que @DynamicPropertySource consiga ler a porta.
+    private static final WireMockServer wireMockServer =
+            new WireMockServer(WireMockConfiguration.options().dynamicPort());
+
+    static {
+        wireMockServer.start();
+        WireMock.configureFor("localhost", wireMockServer.port());
+        setupWireMockStubs();
+    }
+
+    @DynamicPropertySource
+    static void overrideProperties(DynamicPropertyRegistry registry) {
+        registry.add("catalog.api.base-url",
+                () -> "http://localhost:" + wireMockServer.port());
+    }
 
     @LocalServerPort
     private int port;
@@ -48,17 +64,9 @@ class QuoteControllerIT {
     @Autowired
     private OutboxEventRepository outboxEventRepository;
 
-    @BeforeAll
-    static void startWireMock() {
-        wireMockServer = new WireMockServer(WireMockConfiguration.options().port(8089));
-        wireMockServer.start();
-        configureFor("localhost", 8089);
-        setupWireMockStubs();
-    }
-
     @AfterAll
     static void stopWireMock() {
-        if (wireMockServer != null) {
+        if (wireMockServer != null && wireMockServer.isRunning()) {
             wireMockServer.stop();
         }
     }
@@ -131,7 +139,7 @@ class QuoteControllerIT {
                   ],
                   "assistances": ["Funeral", "Ambulância"],
                   "customer": {
-                    "document_number": "36205578900",
+                    "document_number": "52998224725",
                     "name": "John Doe",
                     "type": "NATURAL",
                     "gender": "MALE",
@@ -158,7 +166,7 @@ class QuoteControllerIT {
                 .body("total_monthly_premium_amount", equalTo(75.25f))
                 .body("total_coverage_amount", equalTo(825000.00f))
                 .body("coverages", hasSize(3))
-                .body("customer.document_number", equalTo("36205578900"))
+                .body("customer.document_number", equalTo("52998224725"))
                 .body("customer.name", equalTo("John Doe"))
                 .body("created_at", notNullValue());
     }
@@ -204,7 +212,7 @@ class QuoteControllerIT {
                     { "name": "Morte Acidental", "value": 825000.00 }
                   ],
                   "customer": {
-                    "document_number": "36205578900",
+                    "document_number": "52998224725",
                     "name": "John Doe"
                   }
                 }
@@ -236,7 +244,7 @@ class QuoteControllerIT {
                     { "name": "Assistência Funeral", "value": 25000.00 }
                   ],
                   "customer": {
-                    "document_number": "36205578900",
+                    "document_number": "52998224725",
                     "name": "John Doe"
                   }
                 }
@@ -272,7 +280,7 @@ class QuoteControllerIT {
                   ],
                   "assistances": ["Funeral"],
                   "customer": {
-                    "document_number": "36205578900",
+                    "document_number": "52998224725",
                     "name": "Jane Doe"
                   }
                 }
@@ -332,7 +340,7 @@ class QuoteControllerIT {
                     { "name": "Assistência Funeral", "value": 25000.00 }
                   ],
                   "customer": {
-                    "document_number": "12345678900",
+                    "document_number": "71428793860",
                     "name": "Test User"
                   }
                 }

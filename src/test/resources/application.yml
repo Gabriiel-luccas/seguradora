@@ -44,7 +44,7 @@ spring:
 
 catalog:
   api:
-    base-url: http://localhost:${wiremock.server.port:8089}
+    base-url: http://localhost:0  # overridden at runtime by @DynamicPropertySource in QuoteControllerIT
 
 cache:
   ttl-minutes: 1

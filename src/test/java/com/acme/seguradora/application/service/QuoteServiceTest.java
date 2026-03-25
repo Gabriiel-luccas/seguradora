@@ -260,12 +260,11 @@ class QuoteServiceTest {
 
         when(quoteRepositoryPort.findById(1L)).thenReturn(Optional.of(pendingQuote));
         when(quoteRepositoryPort.save(any(Quote.class))).thenReturn(activeQuote);
-        doNothing().when(outboxService).markPolicyIssuedReceived(anyLong());
 
         quoteService.updateQuoteWithPolicy(1L, 100L, now);
 
         verify(quoteRepositoryPort).save(argThat(q ->
                 q.status() == QuoteStatus.ACTIVE && q.policyId().equals(100L)));
-        verify(outboxService).markPolicyIssuedReceived(1L);
+        verifyNoInteractions(outboxService);
     }
 }

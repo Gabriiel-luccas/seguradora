@@ -102,8 +102,6 @@ public class QuoteService implements CreateQuoteUseCase, GetQuoteUseCase {
 
         quoteRepositoryPort.save(updatedQuote);
 
-        outboxService.enqueuePolicyAnalysisEvent(updatedQuote);
-
         log.info("Quote id={} updated to ACTIVE with policyId={}", quoteId, policyId);
     }
 
