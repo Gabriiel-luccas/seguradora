@@ -51,13 +51,15 @@ spring:
 catalog:
   api:
     base-url: ${CATALOG_API_URL:http://localhost:8081}
+    connect-timeout-ms: ${CATALOG_CONNECT_TIMEOUT_MS:3000}
+    read-timeout-ms: ${CATALOG_READ_TIMEOUT_MS:5000}
 
 cache:
   ttl-minutes: 5
 
 outbox:
   processor:
-    interval-ms: 5000
+    interval-ms: 60000
 
 management:
   endpoints:
@@ -73,3 +75,11 @@ management:
 
 server:
   port: 8080
+
+logging:
+  level:
+    com.acme.seguradora: INFO
+    org.springframework.kafka: WARN
+    org.apache.kafka: WARN
+    org.hibernate.SQL: WARN
+

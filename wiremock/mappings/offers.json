@@ -32,6 +32,37 @@
       }
     },
     {
+      "id": "287bc5c6-d616-4769-83d5-69898ea79242",
+      "priority": 5,
+      "request": {
+        "method": "GET",
+        "urlPattern": "/catalog/offers/7dd6a02b-2d33-4246-8461-5be2ec902daa"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "id": "7dd6a02b-2d33-4246-8461-5be2ec902daa",
+          "product_id": "1ab2c3d4-e5f6-7890-abcd-ef1234567890",
+          "name": "Oferta Padrão",
+          "active": false,
+          "coverages": {
+            "Morte Acidental": 500000.00,
+            "Invalidez Permanente": 300000.00,
+            "Assistência Funeral": 25000.00
+          },
+          "assistances": ["Funeral", "Ambulância", "Chaveiro 24h"],
+          "monthly_premium_amount": {
+            "min_amount": 50.00,
+            "max_amount": 200.00,
+            "suggested_amount": 100.00
+          }
+        }
+      }
+    },
+    {
       "id": "a1b2c3d4-e5f6-7890-abcd-ef9876543210",
       "priority": 10,
       "request": {

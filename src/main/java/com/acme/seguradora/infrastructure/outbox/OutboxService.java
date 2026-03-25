@@ -30,7 +30,7 @@ public class OutboxService {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void saveQuoteReceivedEvent(Quote quote) {
+    public void enqueuePolicyAnalysisEvent(Quote quote) {
         try {
             Map<String, Object> payload = new HashMap<>();
             payload.put("quote_id", quote.id());
@@ -58,7 +58,7 @@ public class OutboxService {
                     .build();
 
             outboxEventRepository.save(event);
-            log.debug("Saved outbox event for quoteId={}", quote.id());
+            log.info("Saved outbox event for quoteId={}", quote.id());
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize outbox payload for quoteId={}", quote.id(), e);
             throw new RuntimeException("Failed to serialize outbox payload", e);
@@ -81,7 +81,7 @@ public class OutboxService {
         outboxEventEntity.setDatUpdated(now);
         outboxEventRepository.save(outboxEventEntity);
 
-        log.debug("Marked QUOTE_RECEIVED event as RECEIVED for quoteId={}", quoteId);
+        log.info("Marked QUOTE_RECEIVED event as RECEIVED for quoteId={}", quoteId);
     }
 
     @Transactional(readOnly = true)

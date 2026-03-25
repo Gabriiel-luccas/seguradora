@@ -78,9 +78,9 @@ QuoteService.createQuote()
    ├── Valida prêmio mensal total (min/max)
    ├── Valida total de coberturas (somatória)
    ├── QuoteRepositoryAdapter.save()             [PostgreSQL]
-   └── OutboxService.saveQuoteReceivedEvent()    [PostgreSQL outbox_events]
+   └── OutboxService.enqueuePolicyAnalysisEvent()  [PostgreSQL outbox_events]
         │
-        ▼ (OutboxProcessor — agendado a cada 5s)
+        ▼ (OutboxProcessor — agendado a cada 1 minuto)
    KafkaTemplate.send("quote.received")          [Kafka]
         │
         ▼
@@ -270,37 +270,91 @@ mvn test
 A publicação no tópico `quote.received` **não ocorre diretamente** durante a criação da cotação. Em vez disso, é usada a estratégia **Transactional Outbox**:
 
 1. A cotação e o evento de saída são gravados na mesma transação do banco (`quotes` + `outbox_events`)
-2. Um `OutboxProcessor` agendado (a cada 5s) consulta eventos pendentes e publica no Kafka
+2. Um `OutboxProcessor` agendado (a cada 1 minuto) consulta eventos pendentes e publica no Kafka
 3. Após publicação bem-sucedida, o evento é marcado como `flagSent = true`
 
 Isso garante que **nenhum evento é perdido** mesmo que o Kafka esteja temporariamente indisponível.
 
-### Simular envio de apólice (serviço de apólices)
+### Simular envio de apólice (tópico `policy.issued`)
 
-Para simular o serviço de apólices publicando no tópico `policy.issued`, use o CLI do Kafka dentro do container:
+O serviço externo de apólices publica no tópico `policy.issued` após concluir a análise da cotação.
+Para simular esse envio manualmente, use o CLI do Kafka **dentro do container**:
+
+> **Importante:** dentro do container o broker é acessível em `localhost:9092` (não `kafka:9092`).  
+> O script está em `/opt/kafka/bin/` (não está no PATH por padrão).
+
+#### Passo a passo
+
+**1. Certifique-se de que os containers estão rodando:**
 
 ```bash
-docker exec seguradora-kafka kafka-console-producer.sh \
-  --bootstrap-server kafka:9092 \
+docker compose ps
+```
+
+**2. (Opcional) Consulte o `id` da cotação que deseja aprovar:**
+
+```bash
+curl http://localhost:8080/api/v1/quotes/1
+```
+
+**3. Publique a mensagem no tópico — Linux/macOS:**
+
+```bash
+echo '{"quote_id":1,"policy_id":98765,"created_at":"2026-03-25T10:35:00"}' | \
+  docker exec -i seguradora-kafka \
+  /opt/kafka/bin/kafka-console-producer.sh \
+  --bootstrap-server localhost:9092 \
   --topic policy.issued
 ```
 
-Cole o seguinte JSON e pressione Enter:
+**3. Publique a mensagem no tópico — Windows (PowerShell):**
 
-```json
-{"quote_id": 1, "policy_id": 98765, "created_at": "2024-01-15T10:35:00"}
+```powershell
+$msg = '{"quote_id":1,"policy_id":98765,"created_at":"2026-03-25T10:35:00"}'; $msg | docker exec -i seguradora-kafka /opt/kafka/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic policy.issued
 ```
 
-Após o envio, a cotação terá seu `status` atualizado para `ACTIVE` e o campo `policy_id` preenchido.
+> Saída vazia = mensagem entregue com sucesso. Erros aparecem no console.
 
-### Listar mensagens publicadas em quote.received
+**4. Verifique que a cotação foi atualizada:**
 
 ```bash
-docker exec seguradora-kafka kafka-console-consumer.sh \
-  --bootstrap-server kafka:9092 \
+curl http://localhost:8080/api/v1/quotes/1
+```
+
+O campo `status` deve ser `ACTIVE` e `policy_id` deve estar preenchido.
+
+---
+
+#### Formato do payload
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `quote_id` | `number` | ID da cotação criada (`PENDING`) |
+| `policy_id` | `number` | ID da apólice gerada pelo serviço externo |
+| `created_at` | `string` (ISO 8601) | Data/hora de emissão da apólice |
+
+---
+
+### Inspecionar mensagens pelo Kafka UI
+
+O **Kafka UI** está disponível em [http://localhost:8090](http://localhost:8090) e permite:
+
+- Visualizar os tópicos `quote.received` e `policy.issued`
+- Ler o payload completo de cada mensagem
+- Monitorar o consumer group `seguradora-group` e o LAG
+
+### Consumir mensagens pelo terminal
+
+Para ler todas as mensagens já publicadas no tópico `quote.received`:
+
+```bash
+docker exec seguradora-kafka \
+  /opt/kafka/bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
   --topic quote.received \
   --from-beginning
 ```
+
 
 ---
 

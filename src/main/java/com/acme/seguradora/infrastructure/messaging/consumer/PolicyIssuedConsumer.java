@@ -35,7 +35,7 @@ public class PolicyIssuedConsumer {
 
             Long quoteId = toLong(payload.get("quote_id"));
             Long policyId = toLong(payload.get("policy_id"));
-            LocalDateTime createdAt = (LocalDateTime) payload.get("created_at");
+            LocalDateTime createdAt = toLocalDateTime(payload.get("created_at"));
 
             if (quoteId == null || policyId == null) {
                 log.error("Invalid policy.issued message: missing quote_id or policy_id");
@@ -58,6 +58,17 @@ public class PolicyIssuedConsumer {
         try {
             return Long.parseLong(value.toString());
         } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private LocalDateTime toLocalDateTime(Object value) {
+        if (value == null) return null;
+        if (value instanceof LocalDateTime ldt) return ldt;
+        try {
+            return LocalDateTime.parse(value.toString());
+        } catch (Exception e) {
+            log.warn("Could not parse created_at value: '{}'", value);
             return null;
         }
     }

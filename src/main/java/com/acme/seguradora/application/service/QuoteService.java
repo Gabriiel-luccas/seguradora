@@ -75,7 +75,7 @@ public class QuoteService implements CreateQuoteUseCase, GetQuoteUseCase {
 
         Quote savedQuote = quoteRepositoryPort.save(pendingQuote);
 
-        outboxService.saveQuoteReceivedEvent(savedQuote);
+        outboxService.enqueuePolicyAnalysisEvent(savedQuote);
 
         log.info("Quote created with id={}", savedQuote.id());
         return savedQuote;
@@ -102,7 +102,7 @@ public class QuoteService implements CreateQuoteUseCase, GetQuoteUseCase {
 
         quoteRepositoryPort.save(updatedQuote);
 
-        outboxService.markPolicyIssuedReceived(quoteId);
+        outboxService.enqueuePolicyAnalysisEvent(updatedQuote);
 
         log.info("Quote id={} updated to ACTIVE with policyId={}", quoteId, policyId);
     }

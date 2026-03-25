@@ -28,7 +28,7 @@ public class CatalogApiAdapter implements CatalogServicePort {
     @Cacheable(value = "products", key = "#productId", unless = "#result == null")
     public Optional<CatalogProductDto> findProductById(String productId) {
         try {
-            log.debug("Fetching product from catalog: {}", productId);
+            log.info("Fetching product from catalog: {}", productId);
             ProductApiResponse response = catalogWebClient.get()
                     .uri("/catalog/products/{id}", productId)
                     .retrieve()
@@ -54,7 +54,7 @@ public class CatalogApiAdapter implements CatalogServicePort {
     @Cacheable(value = "offers", key = "#offerId", unless = "#result == null")
     public Optional<CatalogOfferDto> findOfferById(String offerId) {
         try {
-            log.debug("Fetching offer from catalog: {}", offerId);
+            log.info("Fetching offer from catalog: {}", offerId);
             OfferApiResponse response = catalogWebClient.get()
                     .uri("/catalog/offers/{id}", offerId)
                     .retrieve()

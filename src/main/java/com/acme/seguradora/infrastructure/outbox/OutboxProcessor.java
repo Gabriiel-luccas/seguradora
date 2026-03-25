@@ -20,16 +20,13 @@ public class OutboxProcessor {
     private static final Logger log = LoggerFactory.getLogger(OutboxProcessor.class);
     private static final long KAFKA_SEND_TIMEOUT_SECONDS = 5;
 
-    private final OutboxEventRepository outboxEventRepository;
     private final OutboxService outboxService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
-    public OutboxProcessor(OutboxEventRepository outboxEventRepository,
-                           OutboxService outboxService,
+    public OutboxProcessor(OutboxService outboxService,
                            KafkaTemplate<String, Object> kafkaTemplate,
                            ObjectMapper objectMapper) {
-        this.outboxEventRepository = outboxEventRepository;
         this.outboxService = outboxService;
         this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = objectMapper;
@@ -41,17 +38,18 @@ public class OutboxProcessor {
         List<OutboxEventEntity> pendingEvents = outboxService.loadPendingEvents();
 
         if (pendingEvents.isEmpty()) {
+            log.debug("no pending outbox events");
             return;
         }
 
-        log.debug("Processing {} pending outbox events", pendingEvents.size());
+        log.info("Processing {} pending outbox events", pendingEvents.size());
 
         for (OutboxEventEntity event : pendingEvents) {
             try {
                 Map<String, Object> payload = objectMapper.readValue(
                         event.getPayload(), new TypeReference<>() {});
 
-                String key = event.getQuoteId() != null ? String.valueOf(event.getQuoteId()) : null;
+                String key = String.valueOf(event.getQuoteId());
 
                 // Kafka I/O is outside any DB transaction — no connection held during network I/O
                 kafkaTemplate.send(event.getTopic(), key, payload)

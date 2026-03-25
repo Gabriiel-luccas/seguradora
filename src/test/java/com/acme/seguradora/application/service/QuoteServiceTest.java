@@ -98,7 +98,7 @@ class QuoteServiceTest {
         when(catalogServicePort.findProductById("prod-1")).thenReturn(Optional.of(activeProduct));
         when(catalogServicePort.findOfferById("offer-1")).thenReturn(Optional.of(activeOffer));
         when(quoteRepositoryPort.save(any(Quote.class))).thenReturn(savedQuote);
-        doNothing().when(outboxService).saveQuoteReceivedEvent(any(Quote.class));
+        doNothing().when(outboxService).enqueuePolicyAnalysisEvent(any(Quote.class));
 
         Quote result = quoteService.createQuote(validQuote);
 
@@ -107,7 +107,7 @@ class QuoteServiceTest {
         assertThat(result.status()).isEqualTo(QuoteStatus.PENDING);
 
         verify(quoteRepositoryPort).save(any(Quote.class));
-        verify(outboxService).saveQuoteReceivedEvent(any(Quote.class));
+        verify(outboxService).enqueuePolicyAnalysisEvent(any(Quote.class));
     }
 
     @Test
