@@ -1,0 +1,53 @@
+{
+  "mappings": [
+    {
+      "id": "b1c2d3e4-f5a6-7890-abcd-ef0123456789",
+      "priority": 1,
+      "request": {
+        "method": "GET",
+        "urlPattern": "/catalog/products/1ab2c3d4-e5f6-7890-abcd-ef1234567890"
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "jsonBody": {
+          "id": "1ab2c3d4-e5f6-7890-abcd-ef1234567890",
+          "name": "Seguro de Vida",
+          "active": true,
+          "offers_ids": ["aaa1b2c3-d4e5-6789-abcd-ef0123456789", "7dd6a02b-2d33-4246-8461-5be2ec902daa"]
+        }
+      }
+    },
+    {
+      "id": "a3f7c2e1-b849-4d56-9012-cd3456ef7890",
+      "priority": 5,
+      "request": {
+        "method": "GET",
+        "urlPattern": "/catalog/products/125d48ea-f499-47b0-bf79-19caca822b04"
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "jsonBody": {
+          "id": "125d48ea-f499-47b0-bf79-19caca822b04",
+          "name": "Seguro de Vida",
+          "active": false,
+          "offers_ids": ["aaa1b2c3-d4e5-6789-abcd-ef0123456789"]
+        }
+      }
+    },
+    {
+      "id": "c1d2e3f4-a5b6-7890-abcd-ef9876543210",
+      "priority": 10,
+      "request": {
+        "method": "GET",
+        "urlPattern": "/catalog/products/.*"
+      },
+      "response": {
+        "status": 404,
+        "headers": { "Content-Type": "application/json" },
+        "jsonBody": { "error": "Product not found" }
+      }
+    }
+  ]
+}
