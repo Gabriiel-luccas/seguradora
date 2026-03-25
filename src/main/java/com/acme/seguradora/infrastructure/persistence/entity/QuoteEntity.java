@@ -1,17 +1,13 @@
 package com.acme.seguradora.infrastructure.persistence.entity;
 
-import com.acme.seguradora.domain.model.Customer;
-import com.acme.seguradora.domain.model.Coverage;
 import com.acme.seguradora.domain.model.QuoteStatus;
-import com.acme.seguradora.infrastructure.persistence.converter.CoverageListConverter;
-import com.acme.seguradora.infrastructure.persistence.converter.CustomerConverter;
-import com.acme.seguradora.infrastructure.persistence.converter.StringListConverter;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -38,17 +34,15 @@ public class QuoteEntity {
     @Column(name = "total_coverage_amount", precision = 15, scale = 2)
     private BigDecimal totalCoverageAmount;
 
-    @Convert(converter = CoverageListConverter.class)
-    @Column(name = "coverages", columnDefinition = "TEXT")
-    private List<Coverage> coverages;
+    @OneToMany(mappedBy = "quote", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CoverageEntity> coverages = new ArrayList<>();
 
-    @Convert(converter = StringListConverter.class)
-    @Column(name = "assistances", columnDefinition = "TEXT")
-    private List<String> assistances;
+    @OneToMany(mappedBy = "quote", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AssistanceEntity> assistances = new ArrayList<>();
 
-    @Convert(converter = CustomerConverter.class)
-    @Column(name = "customer", columnDefinition = "TEXT")
-    private Customer customer;
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "customer_id")
+    private CustomerEntity customer;
 
     @Column(name = "policy_id")
     private Long policyId;
@@ -74,8 +68,8 @@ public class QuoteEntity {
         this.category = builder.category;
         this.totalMonthlyPremiumAmount = builder.totalMonthlyPremiumAmount;
         this.totalCoverageAmount = builder.totalCoverageAmount;
-        this.coverages = builder.coverages;
-        this.assistances = builder.assistances;
+        this.coverages = builder.coverages != null ? builder.coverages : new ArrayList<>();
+        this.assistances = builder.assistances != null ? builder.assistances : new ArrayList<>();
         this.customer = builder.customer;
         this.policyId = builder.policyId;
         this.status = builder.status;
@@ -91,9 +85,9 @@ public class QuoteEntity {
     public String getCategory() { return category; }
     public BigDecimal getTotalMonthlyPremiumAmount() { return totalMonthlyPremiumAmount; }
     public BigDecimal getTotalCoverageAmount() { return totalCoverageAmount; }
-    public List<Coverage> getCoverages() { return coverages; }
-    public List<String> getAssistances() { return assistances; }
-    public Customer getCustomer() { return customer; }
+    public List<CoverageEntity> getCoverages() { return coverages; }
+    public List<AssistanceEntity> getAssistances() { return assistances; }
+    public CustomerEntity getCustomer() { return customer; }
     public Long getPolicyId() { return policyId; }
     public QuoteStatus getStatus() { return status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
@@ -105,9 +99,9 @@ public class QuoteEntity {
     public void setCategory(String category) { this.category = category; }
     public void setTotalMonthlyPremiumAmount(BigDecimal v) { this.totalMonthlyPremiumAmount = v; }
     public void setTotalCoverageAmount(BigDecimal v) { this.totalCoverageAmount = v; }
-    public void setCoverages(List<Coverage> coverages) { this.coverages = coverages; }
-    public void setAssistances(List<String> assistances) { this.assistances = assistances; }
-    public void setCustomer(Customer customer) { this.customer = customer; }
+    public void setCoverages(List<CoverageEntity> coverages) { this.coverages = coverages; }
+    public void setAssistances(List<AssistanceEntity> assistances) { this.assistances = assistances; }
+    public void setCustomer(CustomerEntity customer) { this.customer = customer; }
     public void setPolicyId(Long policyId) { this.policyId = policyId; }
     public void setStatus(QuoteStatus status) { this.status = status; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
@@ -120,9 +114,9 @@ public class QuoteEntity {
         private String category;
         private BigDecimal totalMonthlyPremiumAmount;
         private BigDecimal totalCoverageAmount;
-        private List<Coverage> coverages;
-        private List<String> assistances;
-        private Customer customer;
+        private List<CoverageEntity> coverages;
+        private List<AssistanceEntity> assistances;
+        private CustomerEntity customer;
         private Long policyId;
         private QuoteStatus status;
         private LocalDateTime createdAt;
@@ -136,9 +130,9 @@ public class QuoteEntity {
         public Builder category(String v) { this.category = v; return this; }
         public Builder totalMonthlyPremiumAmount(BigDecimal v) { this.totalMonthlyPremiumAmount = v; return this; }
         public Builder totalCoverageAmount(BigDecimal v) { this.totalCoverageAmount = v; return this; }
-        public Builder coverages(List<Coverage> v) { this.coverages = v; return this; }
-        public Builder assistances(List<String> v) { this.assistances = v; return this; }
-        public Builder customer(Customer v) { this.customer = v; return this; }
+        public Builder coverages(List<CoverageEntity> v) { this.coverages = v; return this; }
+        public Builder assistances(List<AssistanceEntity> v) { this.assistances = v; return this; }
+        public Builder customer(CustomerEntity v) { this.customer = v; return this; }
         public Builder policyId(Long v) { this.policyId = v; return this; }
         public Builder status(QuoteStatus v) { this.status = v; return this; }
         public Builder createdAt(LocalDateTime v) { this.createdAt = v; return this; }

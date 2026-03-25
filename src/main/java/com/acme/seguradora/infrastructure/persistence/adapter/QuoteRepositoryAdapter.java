@@ -2,9 +2,11 @@ package com.acme.seguradora.infrastructure.persistence.adapter;
 
 import com.acme.seguradora.application.port.output.QuoteRepositoryPort;
 import com.acme.seguradora.domain.model.Quote;
+import com.acme.seguradora.infrastructure.persistence.entity.QuoteEntity;
 import com.acme.seguradora.infrastructure.persistence.mapper.QuoteEntityMapper;
 import com.acme.seguradora.infrastructure.persistence.repository.QuoteJpaRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -20,13 +22,20 @@ public class QuoteRepositoryAdapter implements QuoteRepositoryPort {
     }
 
     @Override
+    @Transactional
     public Quote save(Quote quote) {
+        if (quote.id() != null) {
+            QuoteEntity existing = quoteJpaRepository.findById(quote.id())
+                    .orElseThrow(() -> new IllegalStateException("Quote not found for update: " + quote.id()));
+            mapper.updateEntity(existing, quote);
+            return mapper.toDomain(quoteJpaRepository.save(existing));
+        }
         return mapper.toDomain(quoteJpaRepository.save(mapper.toEntity(quote)));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<Quote> findById(Long id) {
         return quoteJpaRepository.findById(id).map(mapper::toDomain);
     }
 }
-
